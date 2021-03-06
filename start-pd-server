@@ -1,0 +1,3 @@
+#!/bin/bash
+
+pd -noprefs -nogui -noaudio -nomidi -nrt -stderr -verbose -open pd-server.pd
