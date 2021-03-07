@@ -93,7 +93,7 @@ repl.start({
         verbose = verbose ? 0 : 1;
       } else if (!f.localeCompare("exit")) {
         console.log("Bye!");
-        udpPort.close();
+        if (udpportconnected) udpPort.close();
         if (socket.connected) socket.close();
         process.exit();
       } else if (!f.localeCompare("server")) {
