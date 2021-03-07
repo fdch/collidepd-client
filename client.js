@@ -21,7 +21,7 @@ const udpPort = new osc.UDPPort({
 
 // ---------------------------------------------
 
-var verbose = 0;
+var verbose = 0, udpportconnected = 0;
 
 // ---------------------------------------------
 
@@ -83,9 +83,11 @@ repl.start({
       } else if (!f.localeCompare("udpconnect")) {
         // connect to the udp port
         udpPort.open();
+        udpportconnected = 1;
       } else if (!f.localeCompare("udpdisconnect")) {
         // disconnect from the udp port
         udpPort.close();
+        udpportconnected = 0;
       } else if (!f.localeCompare("verbose")) {
         // change verbosity
         verbose = verbose ? 0 : 1;
@@ -131,21 +133,26 @@ socket.on('chat', function(data) {
 });
 socket.on('event', function(data) {
   
-  let args = Array.prototype.map.call([...data[0].value], function(x) {
-    return {type:'f', value:x};
-  });
-  let address ="/"+data[0].id.toString()+data[0].head.toString();
+  if (udpportconnected) {
   
-  var oscformat = {
-    address: address, 
-    args: args
+    let args = Array.prototype.map.call([...data[0].value], function(x) {
+      return {type:'f', value:x};
+    });
+    let address ="/"+data[0].id.toString()+data[0].head.toString();
+  
+    var oscformat = {
+      address: address, 
+      args: args
+    }
+
+    udpPort.send(oscformat);
   }
 
-  udpPort.send(oscformat);
-  
   if (verbose) {
     console.log("data: %j", data);
-    console.log("OSC: %j", oscformat);
+    if(udpportconnected) {
+      console.log("OSC: %j", oscformat);
+    }
   }
 });
 socket.on('control', function(data) {
