@@ -134,13 +134,15 @@ socket.on('event', function(data) {
   let args = Array.prototype.map.call([...data[0].value], function(x) {
     return {type:'f', value:x};
   });
-
+  let address = data[0].id.toString()+"/"+data[0].head.toString();
+  
   var oscformat = {
-    address: data[0].head.toString(), 
+    address: address, 
     args: args
   }
 
   udpPort.send(oscformat);
+  
   if (verbose) {
     console.log("data: %j", data);
     console.log("OSC: %j", oscformat);
