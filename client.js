@@ -3,6 +3,7 @@
 const SERVER  = "https://collidepd.herokuapp.com";
 const UDPHOST = "localhost";
 const UDPPORT = 5009;
+const autoConnect = true;
 
 // ---------------------------------------------
 
@@ -11,17 +12,19 @@ const io = require('socket.io-client');
 const repl = require('repl');
 const socket = io.connect(SERVER, {
   transports: ['websocket'],
-  autoConnect: false
+  autoConnect: autoConnect
 });
 const udpPort = new osc.UDPPort({
   remoteAddress: UDPHOST,
-  remotePort: UDPPORT,
+  remotePort: UDPPORT,  
+  localAddress: UDPHOST,
+  localPort: UDPPORT+1,
   metadata: true
 });
 
 // ---------------------------------------------
 
-var verbose = 0, udpportconnected = 0;
+var verbose = 0, udpportconnected = 0, users = [];
 
 // ---------------------------------------------
 
@@ -63,6 +66,11 @@ function sendSocketMessage(socket, data) {
   }
 }
 
+if (autoConnect) {
+
+  udpPort.open();
+
+}
 
 repl.start({
   
@@ -82,12 +90,16 @@ repl.start({
         socket.close();
       } else if (!f.localeCompare("udpconnect")) {
         // connect to the udp port
-        udpPort.open();
-        udpportconnected = 1;
+        if(!udpconnected)  {
+          udpPort.open();
+          udpportconnected = 1;
+        }
       } else if (!f.localeCompare("udpdisconnect")) {
         // disconnect from the udp port
-        udpPort.close();
-        udpportconnected = 0;
+        if(udpconnected) {
+          udpPort.close();
+          udpportconnected = 0;
+        }
       } else if (!f.localeCompare("verbose")) {
         // change verbosity
         verbose = verbose ? 0 : 1;
@@ -134,11 +146,29 @@ socket.on('chat', function(data) {
 socket.on('event', function(data) {
   
   if (udpportconnected) {
-  
+    
+    let uid = data[0].id.toString();
     let args = Array.prototype.map.call([...data[0].value], function(x) {
       return {type:'f', value:x};
     });
-    let address ="/"+data[0].id.toString()+data[0].head.toString();
+    
+    var i, oscid=-1;
+
+    for (i in users) {
+      if (users[i].hasOwnProperty(uid)) {
+        oscid = users[i][uid];
+        break;
+      }
+    }
+
+    if (oscid==-1) {
+      oscid = users.length + 1;
+      let u = {};
+      u[uid] = oscid;
+      users.push(u);
+    }
+    // "/cpd/CANTDEUS/IDUSUARIO/HEAD/VALUES"
+    let address ="/cpd/"+users.length+"/"+oscid.toString()+data[0].head.toString();
   
     var oscformat = {
       address: address, 
