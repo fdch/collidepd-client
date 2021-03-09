@@ -90,13 +90,13 @@ repl.start({
         socket.close();
       } else if (!f.localeCompare("udpconnect")) {
         // connect to the udp port
-        if(!udpconnected)  {
+        if(!udpportconnected)  {
           udpPort.open();
           udpportconnected = 1;
         }
       } else if (!f.localeCompare("udpdisconnect")) {
         // disconnect from the udp port
-        if(udpconnected) {
+        if(udpportconnected) {
           udpPort.close();
           udpportconnected = 0;
         }
