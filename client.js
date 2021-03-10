@@ -104,6 +104,15 @@ socket.on('usernames', (data) => {
 })
 
 
+socket.on('killuser', (data) => {
+  if(udpportconnected) {
+    udpPort.send({
+      address: "/cpd/"+data.toString()+"/kill", 
+      args: {type:'f', value:0}
+    });
+  }
+})
+
 socket.on('userdata', (data) => {
   // this is received whenever there is a new (dis)connection
   running = false;
