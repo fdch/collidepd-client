@@ -2,8 +2,9 @@
 
 const SERVER  = "https://collidepd.herokuapp.com";
 const UDPHOST = "localhost";
-const UDPPORT = 5009;
-const autoConnect = true;
+const UDPPORT = parseInt(process.argv[2] || 5009);
+const AUTOCONNECT = true;
+const UDPLOCALPORT = parseInt(process.argv[3] || UDPPORT + 1);
 
 // ---------------------------------------------
 
@@ -12,19 +13,19 @@ const io = require('socket.io-client');
 const repl = require('repl');
 const socket = io.connect(SERVER, {
   transports: ['websocket'],
-  autoConnect: autoConnect
+  autoConnect: AUTOCONNECT
 });
 const udpPort = new osc.UDPPort({
   remoteAddress: UDPHOST,
   remotePort: UDPPORT,  
   localAddress: UDPHOST,
-  localPort: UDPPORT+1,
+  localPort: UDPLOCALPORT,
   metadata: true
 });
 
 // ---------------------------------------------
 
-var verbose = 0, udpportconnected = 0, users = [];
+var verbose = 0, udpportconnected = 0, users, thisid, running=true;
 
 // ---------------------------------------------
 
@@ -66,11 +67,122 @@ function sendSocketMessage(socket, data) {
   }
 }
 
-if (autoConnect) {
+
+function addUserOscId(uid) {
+  // adds the user to the internal users array
+  // and return its osc id
+  let u = {}, oscid = users.length + 1;
+  u[uid] = oscid;
+  users.push(u);
+
+  return oscid;
+}
+
+function getUserOscId(uid) {
+  // returns our internal osc id of the requested user id (socket.id)
+  let u = users[0];
+  for (let i in u) {
+    if (!uid.localeCompare(u[i].id.toString())) {
+      return u[i].oscid.toString();
+    }
+  }
+}
+
+// socket callbacks
+
+socket.on('connect', () => {
+  thisid = socket.id;
+  console.log("socket id: " + thisid);
+});
+
+socket.on('users', (data) => {
+  console.log("%d connected users.", data);
+})
+
+socket.on('usernames', (data) => {
+  console.log("%j", data);  
+})
+
+
+socket.on('userdata', (data) => {
+  // this is received whenever there is a new (dis)connection
+  running = false;
+  users = data;
+  running = true;
+  for(let i in users) {
+    console.log("data[%d]=%j",i,users[i]);
+  }
+});
+
+
+socket.on('event', (data) => {
+  let dropped;
+  if (udpportconnected) {
+    
+    if (running) {
+      
+      dropped=0;    
+    
+      let uid = data[0].id.toString();
+      let args = Array.prototype.map.call([...data[0].value], function(x) {
+        return {type:'f', value:x};
+      });
+      // osc message formatted as: "/cpd/OSCID/HEAD/ VALUES..."
+      let oscid = "-1";
+      try {
+        oscid = getUserOscId(uid);
+      } catch (error) {
+        // console.error(error);
+      }
+      let address ="/cpd/"+oscid+data[0].head.toString();
+    
+      var oscformat = {
+        address: address, 
+        args: args
+      }
+    
+      udpPort.send(oscformat);
+    
+    } else {
+    
+      dropped++;
+    
+    }
+  }
+
+  if (verbose) {
+    console.log("data: %j", data);
+    if(udpportconnected) {
+      console.log("OSC: %j", oscformat);
+      if(dropped) {
+        console.log("Dropped %d", dropped);
+      }
+    }
+  }
+});
+
+socket.on("connect_error", (error) => {
+  console.error(error.message);
+});
+
+socket.on("disconnect", (reason) => {
+  console.log(reason);
+});
+
+socket.on('chat', (data) => {
+  console.log('chat: %j', data);
+});
+
+
+// Connect to UDP port
+
+if (AUTOCONNECT) {
 
   udpPort.open();
 
 }
+
+// Prompt for user CLI input
 
 repl.start({
   
@@ -103,6 +215,9 @@ repl.start({
       } else if (!f.localeCompare("verbose")) {
         // change verbosity
         verbose = verbose ? 0 : 1;
+      } else if (!f.localeCompare("print")) {
+        // change verbosity
+        console.log("%j", users);
       } else if (!f.localeCompare("exit")) {
         console.log("Bye!");
         if (udpportconnected) udpPort.close();
@@ -118,79 +233,4 @@ repl.start({
       }
     }
 
-});
-
-// socket callbacks
-
-socket.on('connect', () => {
-  console.log("socket id: " + socket.id);
-});
-
-socket.on("connect_error", (error) => {
-  console.error(error.message);
-});
-
-socket.on("disconnect", (reason) => {
-  console.log(reason);
-});
-
-socket.on('users', function(data) {
-  console.log(data.toString());
-});
-socket.on('console', function(data) {
-  console.log(data);
-});
-socket.on('chat', function(data) {
-  console.log('chat: %j', data);
-});
-socket.on('event', function(data) {
-  
-  if (udpportconnected) {
-    
-    let uid = data[0].id.toString();
-    let args = Array.prototype.map.call([...data[0].value], function(x) {
-      return {type:'f', value:x};
-    });
-    
-    var i, oscid=-1;
-
-    for (i in users) {
-      if (users[i].hasOwnProperty(uid)) {
-        oscid = users[i][uid];
-        break;
-      }
-    }
-
-    if (oscid==-1) {
-      oscid = users.length + 1;
-      let u = {};
-      u[uid] = oscid;
-      users.push(u);
-    }
-    // "/cpd/CANTDEUS/IDUSUARIO/HEAD/VALUES"
-    let address ="/cpd/"+users.length+"/"+oscid.toString()+data[0].head.toString();
-  
-    var oscformat = {
-      address: address, 
-      args: args
-    }
-
-    udpPort.send(oscformat);
-  }
-
-  if (verbose) {
-    console.log("data: %j", data);
-    if(udpportconnected) {
-      console.log("OSC: %j", oscformat);
-    }
-  }
-});
-socket.on('control', function(data) {
-  console.log(data);
-});
-socket.on('dump', function(data) {
-  console.log(data);
-});
-socket.on('connected', function() {
-  console.log("connected");
 });
