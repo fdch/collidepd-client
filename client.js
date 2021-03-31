@@ -1,3 +1,18 @@
+const hmsg="\n\
+------------------------------------------------\n\
+| COLLIDEPD commandline client client utility  |\n\
+------------------------------------------------\n\n\
+> connect : connect to the socket\n\
+> disconnect : disconnect from the socket\n\
+> udpconnect : connect to the udp port\n\
+> udpdisconnect : disconnect from the udp port\n\
+> verbose :  change verbosity\n\
+> print : prints user data\n\
+> exit: safely exits program\n\
+> help : displays this help message\n\
+> server [msg] : forwards messages to the server\n\
+> /osc/address values... : sends osc messages to the udp server\n\n"
+
 // ---------------------------------------------
 
 const SERVER  = "https://collidepd.herokuapp.com";
@@ -11,6 +26,9 @@ const UDPLOCALPORT = parseInt(process.argv[3] || UDPPORT + 1);
 const osc = require("osc");
 const io = require('socket.io-client');
 const repl = require('repl');
+
+console.log("Connecting to heroku server...");
+
 const socket = io.connect(SERVER, {
   transports: ['websocket'],
   autoConnect: AUTOCONNECT
@@ -92,7 +110,9 @@ function getUserOscId(uid) {
 
 socket.on('connect', () => {
   thisid = socket.id;
-  console.log("socket id: " + thisid);
+  console.log("Connected to socket!")
+  console.log("socket.id: " + thisid);
+  console.log(hmsg)
 });
 
 socket.on('users', (data) => {
@@ -186,16 +206,15 @@ socket.on('chat', (data) => {
 // Connect to UDP port
 
 if (AUTOCONNECT) {
-
+  console.log("Connecting to udp port...");
   udpPort.open();
-
 }
 
 // Prompt for user CLI input
 
 repl.start({
   
-  prompt: '',
+  prompt: '> ',
   
     eval: (cmd) => {
       // parse the string into a data array
@@ -228,7 +247,7 @@ repl.start({
         // change verbosity
         console.log("%j", users);
       } else if (!f.localeCompare("exit")) {
-        console.log("Bye!");
+        console.log("Bye!\n");
         if (udpportconnected) udpPort.close();
         if (socket.connected) socket.close();
         process.exit();
@@ -236,6 +255,11 @@ repl.start({
         // forward the server message to the socket
         s = data.shift();
         sendSocketMessage(socket, data);
+      } else if (!f.localeCompare("help")) {
+        // get some help
+        console.log(hmsg);
+      } else if (!f.localeCompare("")) {
+        // do nothing
       } else {
         // forward the osc formatted message
         sendUDPMessage(udpPort, data);

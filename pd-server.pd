@@ -1,4 +1,4 @@
-#N canvas 962 75 450 291 12;
+#N canvas 535 37 572 494 12;
 #X obj 68 31 oscparse;
 #X obj 68 7 netreceive -u -b 5009;
 #X obj 99 238 clone test-user 10;
@@ -6,7 +6,7 @@
 #X obj 323 222 print;
 #X obj 84 135 f;
 #X obj 327 200 spigot;
-#X obj 391 178 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 1
+#X obj 391 178 tgl 15 0 empty empty empty 17 7 0 10 -262144 -1 -1 0
 1;
 #X obj 68 52 list trim;
 #X floatatom 297 57 5 0 0 0 cant_usuarios - -;
