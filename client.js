@@ -106,6 +106,15 @@ function getUserOscId(uid) {
   }
 }
 
+function onoff(oscid, value) {
+  if(udpportconnected) {
+    udpPort.send({
+      address: "/cpd/"+oscid, 
+      args: {type:'i', value:value}
+    });
+  }
+}
+
 // socket callbacks
 
 socket.on('connect', () => {
@@ -123,14 +132,12 @@ socket.on('usernames', (data) => {
   console.log("%j", data);  
 })
 
+socket.on('connected', (data) => {
+  onoff(data.toString(), 1); // turn user on
+})
 
-socket.on('killuser', (data) => {
-  if(udpportconnected) {
-    udpPort.send({
-      address: "/cpd/"+data.toString()+"/kill", 
-      args: {type:'f', value:0}
-    });
-  }
+socket.on('disconnected', (data) => {
+  onoff(data.toString(), 0); // turn user off
 })
 
 socket.on('userdata', (data) => {
@@ -208,6 +215,7 @@ socket.on('chat', (data) => {
 if (AUTOCONNECT) {
   console.log("Connecting to udp port...");
   udpPort.open();
+  udpportconnected = 1;
 }
 
 // Prompt for user CLI input
