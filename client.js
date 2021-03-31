@@ -109,7 +109,7 @@ function getUserOscId(uid) {
 function onoff(oscid, value) {
   if(udpportconnected) {
     udpPort.send({
-      address: "/cpd/"+oscid, 
+      address: "/cpd/"+oscid+"/onoff", 
       args: {type:'i', value:value}
     });
   }
@@ -132,12 +132,16 @@ socket.on('usernames', (data) => {
   console.log("%j", data);  
 })
 
-socket.on('connected', (data) => {
-  onoff(data.toString(), 1); // turn user on
-})
+// socket.on('connected', (data) => {
+//   onoff(data.toString(), 1); // turn user on
+// })
 
-socket.on('disconnected', (data) => {
-  onoff(data.toString(), 0); // turn user off
+// socket.on('disconnected', (data) => {
+//   onoff(data.toString(), 0); // turn user off
+// })
+
+socket.on('onoff', (data, value) => {
+  onoff(data.toString(), value); // turn user off
 })
 
 socket.on('userdata', (data) => {
