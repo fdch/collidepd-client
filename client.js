@@ -15,11 +15,11 @@ const hmsg="\n\
 
 // ---------------------------------------------
 
-const SERVER  = "https://collidepd.herokuapp.com";
-const UDPHOST = "localhost";
-const UDPPORT = parseInt(process.argv[2] || 5009);
-const AUTOCONNECT = true;
+const UDPPORT      = parseInt(process.argv[2] || 5009);
 const UDPLOCALPORT = parseInt(process.argv[3] || UDPPORT + 1);
+const SERVER  = process.argv[4] || "https://collidepd.herokuapp.com";
+const UDPHOST = process.argv[5] || "localhost";
+const AUTOCONNECT = true;
 
 // ---------------------------------------------
 
@@ -141,6 +141,8 @@ socket.on('usernames', (data) => {
 // })
 
 socket.on('onoff', (data, value) => {
+  // console.log(data);
+  // console.log(value);
   onoff(data.toString(), value); // turn user off
 })
 
@@ -150,7 +152,11 @@ socket.on('userdata', (data) => {
   users = data;
   running = true;
   for(let i in users) {
-    console.log("data[%d]=%j",i,users[i]);
+    if (verbose){
+      let o = JSON.stringify(users[i], null, 4);
+      console.log(o);  
+    }
+    console.log(users[i]['id'], users[i]['oscid']);
   }
 });
 
@@ -163,18 +169,11 @@ socket.on('event', (data) => {
       
       dropped=0;    
     
-      let uid = data[0].id.toString();
-      let args = Array.prototype.map.call([...data[0].value], function(x) {
+      let args = Array.prototype.map.call([...data.value], function(x) {
         return {type:'f', value:x};
       });
-      // osc message formatted as: "/cpd/OSCID/HEAD/ VALUES..."
-      let oscid = "-1";
-      try {
-        oscid = getUserOscId(uid);
-      } catch (error) {
-        // console.error(error);
-      }
-      let address ="/cpd/"+oscid+data[0].head.toString();
+      
+      let address = "/cpd/" + data.id.toString() + data.head.toString();
     
       var oscformat = {
         address: address, 
@@ -212,7 +211,12 @@ socket.on("disconnect", (reason) => {
 socket.on('chat', (data) => {
   console.log('chat: %j', data);
 });
-
+socket.on('connected', function(s) {
+    console.log(s.toString());
+});
+socket.on('disconnected', function() {
+    console.log('disconnected');
+});
 
 // Connect to UDP port
 
