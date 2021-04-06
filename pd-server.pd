@@ -1,4 +1,4 @@
-#N canvas 2028 85 544 483 12;
+#N canvas 736 85 544 483 12;
 #X obj 68 31 oscparse;
 #X obj 68 7 netreceive -u -b 5009;
 #X obj 104 248 list;
@@ -15,10 +15,10 @@
 #X obj 38 200 bng 15 250 50 0 empty empty empty 17 7 0 10 -262144 -1
 -1;
 #X obj 81 419 dac~;
-#X floatatom 206 441 5 0 0 0 - - -;
-#X obj 206 417 env~;
-#X floatatom 165 438 5 0 0 0 - - -;
-#X obj 165 414 env~;
+#X floatatom 209 432 5 0 0 0 - - -;
+#X obj 209 408 env~;
+#X floatatom 167 431 5 0 0 0 - - -;
+#X obj 168 405 env~;
 #X obj 81 362 clone test-user 100;
 #X text 28 170 oscid;
 #X msg 152 176 0 xyz 0 0 0;
@@ -29,6 +29,7 @@
 #X obj 55 80 route cpd;
 #X obj 296 20 loadbang;
 #X msg 296 44 \; pd dsp 1;
+#X msg 176 309 vis 1 1;
 #X connect 0 0 6 0;
 #X connect 0 0 8 0;
 #X connect 1 0 0 0;
@@ -52,3 +53,4 @@
 #X connect 17 1 14 0;
 #X connect 24 0 9 0;
 #X connect 25 0 26 0;
+#X connect 27 0 17 0;
