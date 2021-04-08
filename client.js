@@ -14,13 +14,14 @@ const hmsg="\n\
 > /osc/address values... : sends osc messages to the udp server\n\n"
 
 // ---------------------------------------------
-
-const UDPPORT      = parseInt(process.argv[2] || 5009);
-const UDPLOCALPORT = parseInt(process.argv[3] || UDPPORT + 1);
-const SERVER  = process.argv[4] || "https://collidepd.herokuapp.com";
-const UDPHOST = process.argv[5] || "localhost";
-const AUTOCONNECT = true;
-
+const HEROKUAPP    = "https://collidepd.herokuapp.com";
+const UDPPORT      = parseInt(process.argv[2]) || 5009;
+const UDPLOCALPORT = parseInt(process.argv[3]) || 5010;
+const SERVER       = process.argv[4] || HEROKUAPP;
+const AUTOCONNECT  = parseInt(process.argv[5]) || true;
+const UDPHOST      = process.argv[6] || "localhost";
+const GUI          = parseInt(process.argv[7]) || false;
+const PORT         = parseInt(process.argv[8]) || 5011;
 // ---------------------------------------------
 
 const osc = require("osc");
@@ -40,6 +41,26 @@ const udpPort = new osc.UDPPort({
   localPort: UDPLOCALPORT,
   metadata: true
 });
+
+// ---------------------------------------------
+
+// homepage
+
+const express = require('express');
+const app = express();
+const path = require('path');
+const http = require('http');
+const server = http.Server(app);
+
+
+app.use(express.static(path.join(__dirname, 'gui')));
+
+// serve the homepage
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
+
 
 // ---------------------------------------------
 
@@ -224,6 +245,13 @@ if (AUTOCONNECT) {
   console.log("Connecting to udp port...");
   udpPort.open();
   udpportconnected = 1;
+
+}
+if (GUI) {
+  console.log("opening gui...");
+  let url = 'http://localhost:'+PORT;
+  let start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
+  require('child_process').exec(start + ' ' + url);
 }
 
 // Prompt for user CLI input
@@ -283,3 +311,5 @@ repl.start({
     }
 
 });
+
+server.listen(PORT, () => console.log(`Listening on ${ PORT }`));
