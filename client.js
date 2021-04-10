@@ -21,7 +21,7 @@ const SERVER       = process.argv[4] || HEROKUAPP;
 const AUTOCONNECT  = parseInt(process.argv[5]) || true;
 const UDPHOST      = process.argv[6] || "localhost";
 const GUI          = parseInt(process.argv[7]) || false;
-const PORT         = parseInt(process.argv[8]) || 5011;
+const PORT         = process.env.PORT || parseInt(process.argv[8]) || 5011;
 // ---------------------------------------------
 
 const osc = require("osc");
