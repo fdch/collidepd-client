@@ -1,36 +1,3 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-  <meta charset="utf-8">
-  <title>WebRTC Scalable Broadcast using RTCMultiConnection</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
-</head>
-<body>
-  
-  <h1>
-    WebRTC Scalable Broadcast using RTCMultiConnection
-    <p class="no-mobile">
-      Use peer-to-peer protocol to broadcast your video over 20+ users.
-    </p>
-  </h1>
-
-  <section class="make-center">
-      <p style="margin: 0; padding: 0; padding-bottom: 20px;">
-          <div class="make-center">
-          <input type="text" id="broadcast-id" value="room-xyz" autocorrect=off autocapitalize=off size=20>
-          <button id="open-or-join">Open or Join Broadcast</button>
-
-          <div class="make-center" id="broadcast-viewers-counter"></div>
-      </p>
-
-      <video id="video-preview" controls loop></video>
-  </section>
-
-<script src="/RTCMultiConnection.min.js"></script>
-<script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-
-<script>
 // recording is disabled because it is resulting for browser-crash
 // if you enable below line, please also uncomment above "RecordRTC.js"
 var enableRecordings = false;
@@ -41,7 +8,10 @@ var connection = new RTCMultiConnection();
 // use your own TURN-server here!
 connection.iceServers = [{
     'urls': [
-        'https://fdch-stun.herokuapp.com/',
+        'stun:stun.l.google.com:19302',
+        'stun:stun1.l.google.com:19302',
+        'stun:stun2.l.google.com:19302',
+        'stun:stun.l.google.com:19302?transport=udp',
     ]
 }];
 
@@ -56,10 +26,11 @@ connection.maxRelayLimitPerUser = 1;
 connection.autoCloseEntireSession = true;
 
 // by default, socket.io server is assumed to be deployed on your own URL
-connection.socketURL = 'https://collidepd.herokuapp.com:5012/';
+// connection.socketURL = 'http://localhost:5011';
+// connection.socketURL =  'https://collidepd.herokuapp.com';
 
 // comment-out below line if you do not have your own socket.io server
-// connection.socketURL = 'https://rtcmulticonnection.herokuapp.com:443/';
+connection.socketURL = 'https://rtcmulticonnection.herokuapp.com:443/';
 
 connection.socketMessageEvent = 'scalable-media-broadcast-demo';
 
@@ -77,7 +48,7 @@ connection.connectSocket(function(socket) {
 
         connection.session = hintsToJoinBroadcast.typeOfStreams;
         connection.sdpConstraints.mandatory = {
-            OfferToReceiveVideo: !!connection.session.video,
+            OfferToReceiveVideo: false,
             OfferToReceiveAudio: !!connection.session.audio
         };
         connection.broadcastId = hintsToJoinBroadcast.broadcastId;
@@ -132,22 +103,22 @@ window.onbeforeunload = function() {
     document.getElementById('open-or-join').disabled = false;
 };
 
-var videoPreview = document.getElementById('video-preview');
+// var videoPreview = document.getElementById('video-preview');
 
 connection.onstream = function(event) {
     if (connection.isInitiator && event.type !== 'local') {
         return;
     }
 
-    connection.isUpperUserLeft = false;
-    videoPreview.srcObject = event.stream;
-    videoPreview.play();
+    // connection.isUpperUserLeft = false;
+    // videoPreview.srcObject = event.stream;
+    // videoPreview.play();
 
-    videoPreview.userid = event.userid;
+    // videoPreview.userid = event.userid;
 
-    if (event.type === 'local') {
-        videoPreview.muted = true;
-    }
+    // if (event.type === 'local') {
+        // videoPreview.muted = true;
+    // }
 
     if (connection.isInitiator == false && event.type === 'remote') {
         // he is merely relaying the media
@@ -220,7 +191,7 @@ document.getElementById('open-or-join').onclick = function() {
 
     connection.session = {
         audio: true,
-        video: true,
+        video: false,
         oneway: true
     };
 
@@ -245,7 +216,7 @@ document.getElementById('open-or-join').onclick = function() {
 connection.onstreamended = function() {};
 
 connection.onleave = function(event) {
-    if (event.userid !== videoPreview.userid) return;
+    // if (event.userid !== videoPreview.userid) return;
 
     connection.getSocket(function(socket) {
         socket.emit('can-not-relay-broadcast');
@@ -255,8 +226,8 @@ connection.onleave = function(event) {
         if (allRecordedBlobs.length) {
             // playing lats recorded blob
             var lastBlob = allRecordedBlobs[allRecordedBlobs.length - 1];
-            videoPreview.src = URL.createObjectURL(lastBlob);
-            videoPreview.play();
+            // videoPreview.src = URL.createObjectURL(lastBlob);
+            // videoPreview.play();
             allRecordedBlobs = [];
         } else if (connection.currentRecorder) {
             var recorder = connection.currentRecorder;
@@ -264,8 +235,8 @@ connection.onleave = function(event) {
             recorder.stopRecording(function() {
                 if (!connection.isUpperUserLeft) return;
 
-                videoPreview.src = URL.createObjectURL(recorder.getBlob());
-                videoPreview.play();
+                // videoPreview.src = URL.createObjectURL(recorder.getBlob());
+                // videoPreview.play();
             });
         }
 
@@ -335,8 +306,3 @@ connection.onNumberOfBroadcastViewersUpdated = function(event) {
 
     document.getElementById('broadcast-viewers-counter').innerHTML = 'Number of broadcast viewers: <b>' + event.numberOfBroadcastViewers + '</b>';
 };
-</script>
-
-  <script src="https://www.webrtc-experiment.com/common.js"></script>
-</body>
-</html>

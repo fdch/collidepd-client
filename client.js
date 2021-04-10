@@ -51,6 +51,7 @@ const app = express();
 const path = require('path');
 const http = require('http');
 const server = http.Server(app);
+const ioS = require('socket.io')(server);
 
 
 app.use(express.static(path.join(__dirname, 'gui')));
@@ -247,12 +248,45 @@ if (AUTOCONNECT) {
   udpportconnected = 1;
 
 }
+
 if (GUI) {
   console.log("opening gui...");
   let url = 'http://localhost:'+PORT;
-  let start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
-  require('child_process').exec(start + ' ' + url);
+  // let start = (process.platform == 'darwin'? 'open': process.platform == 'win32'? 'start': 'xdg-open');
+  // require('child_process').exec(start + ' ' + url);
+
+
+  ioS.sockets.on('connection', function(sk) {
+    console.log("connected: "+ sk.id);
+  
+    sk.on('offer', (data) => {
+      console.log("OFFER:\n%j",data);
+      socket.emit('offer', data);
+    });
+
+  });
+
+
 }
+
+
+// function onIceCandidate(pc, event) {
+//   pc.addIceCandidate(event.candidate)
+//       .then(
+//           () => onAddIceCandidateSuccess(pc),
+//           err => onAddIceCandidateError(pc, err)
+//       );
+//   console.log(`${getName(pc)} ICE candidate:\n${event.candidate ? event.candidate.candidate : '(null)'}`);
+// }
+
+// function onAddIceCandidateSuccess() {
+//   console.log('AddIceCandidate success.');
+// }
+
+// function onAddIceCandidateError(error) {
+//   console.log(`Failed to add ICE Candidate: ${error.toString()}`);
+// }
+
 
 // Prompt for user CLI input
 

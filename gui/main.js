@@ -9,6 +9,8 @@
 
 'use strict';
 
+const audioInputSelect = document.querySelector('select#audioSource');
+const audioOutputSelect = document.querySelector('select#audioOutput');
 const audio2 = document.querySelector('audio#audio2');
 const callButton = document.querySelector('button#callButton');
 const hangupButton = document.querySelector('button#hangupButton');
@@ -16,6 +18,7 @@ const codecSelector = document.querySelector('select#codec');
 hangupButton.disabled = true;
 callButton.onclick = call;
 hangupButton.onclick = hangup;
+const selectors = [audioInputSelect, audioOutputSelect];
 
 let pc1;
 let pc2;
@@ -71,6 +74,50 @@ if (supportsSetCodecPreferences) {
   codecPreferences.style.display = 'none';
 }
 
+function gotDevices(deviceInfos) {
+  // Handles being called several times to update labels. Preserve values.
+  const values = selectors.map(select => select.value);
+  selectors.forEach(select => {
+    while (select.firstChild) {
+      select.removeChild(select.firstChild);
+    }
+  });
+  for (let i = 0; i !== deviceInfos.length; ++i) {
+    const deviceInfo = deviceInfos[i];
+    const option = document.createElement('option');
+    option.value = deviceInfo.deviceId;
+    if (deviceInfo.kind === 'audioinput') {
+      option.text = deviceInfo.label || `microphone ${audioInputSelect.length + 1}`;
+      audioInputSelect.appendChild(option);
+    } else if (deviceInfo.kind === 'audiooutput') {
+      option.text = deviceInfo.label || `speaker ${audioOutputSelect.length + 1}`;
+      audioOutputSelect.appendChild(option);
+    } else if (deviceInfo.kind === 'videoinput') {
+      let opt = deviceInfo.label || `camera ${videoSelect.length + 1}`;
+      console.log(opt)
+      // videoSelect.appendChild(option);
+    } else {
+      console.log('Some other kind of source/device: ', deviceInfo);
+    }
+  }
+  selectors.forEach((select, selectorIndex) => {
+    if (Array.prototype.slice.call(select.childNodes).some(n => n.value === values[selectorIndex])) {
+      select.value = values[selectorIndex];
+    }
+  });
+}
+
+navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
+
+function handleError(error) {
+  console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
+}
+
+function changeAudioDestination() {
+  const audioDestination = audioOutputSelect.value;
+  attachSinkId(videoElement, audioDestination);
+}
+
 // Change the ptime. For opus supported values are [10, 20, 40, 60].
 // Expert option without GUI.
 // eslint-disable-next-line no-unused-vars
@@ -87,18 +134,24 @@ async function setPtime(ptime) {
 }
 
 function gotStream(stream) {
+
   hangupButton.disabled = false;
   console.log('Received local stream');
+  
   localStream = stream;
   const audioTracks = localStream.getAudioTracks();
+  
   if (audioTracks.length > 0) {
     console.log(`Using Audio device: ${audioTracks[0].label}`);
   }
+  
   localStream.getTracks().forEach(track => pc1.addTrack(track, localStream));
   console.log('Adding Local Stream to peer connection');
 
   if (supportsSetCodecPreferences) {
+  
     const preferredCodec = codecPreferences.options[codecPreferences.selectedIndex];
+  
     if (preferredCodec.value !== '') {
       const [mimeType, clockRate, sdpFmtpLine] = preferredCodec.value.split(' ');
       const {codecs} = RTCRtpSender.getCapabilities('audio');
@@ -117,20 +170,7 @@ function gotStream(stream) {
   pc1.createOffer(offerOptions)
       .then(gotDescription1, onCreateSessionDescriptionError);
 
-  bitrateSeries = new TimelineDataSeries();
-  bitrateGraph = new TimelineGraphView('bitrateGraph', 'bitrateCanvas');
-  bitrateGraph.updateEndDate();
-
-  headerrateSeries = new TimelineDataSeries();
-  headerrateSeries.setColor('green');
-
-  packetSeries = new TimelineDataSeries();
-  packetGraph = new TimelineGraphView('packetGraph', 'packetCanvas');
-  packetGraph.updateEndDate();
-
-  audioLevelSeries = new TimelineDataSeries();
-  audioLevelGraph = new TimelineGraphView('audioLevelGraph', 'audioLevelCanvas');
-  audioLevelGraph.updateEndDate();
+  return navigator.mediaDevices.enumerateDevices();
 }
 
 function onCreateSessionDescriptionError(error) {
@@ -138,28 +178,59 @@ function onCreateSessionDescriptionError(error) {
 }
 
 function call() {
+
+  audioOutputSelect.onchange = changeAudioDestination;
+
+  const audioSource = audioInputSelect.value;
+
+  const constraints = {
+    audio: {deviceId: audioSource ? {exact: audioSource} : undefined},
+    video: false
+  };
+
+
   callButton.disabled = true;
   codecSelector.disabled = true;
+  
   console.log('Starting call');
   const servers = null;
+ 
+
   pc1 = new RTCPeerConnection(servers);
   console.log('Created local peer connection object pc1');
   pc1.onicecandidate = e => onIceCandidate(pc1, e);
+
+
   pc2 = new RTCPeerConnection(servers);
   console.log('Created remote peer connection object pc2');
   pc2.onicecandidate = e => onIceCandidate(pc2, e);
+
+
   pc2.ontrack = gotRemoteStream;
+
   console.log('Requesting local stream');
+
   navigator.mediaDevices
-      .getUserMedia({
-        audio: true,
-        video: false
-      })
-      .then(gotStream)
-      .catch(e => {
-        alert(`getUserMedia() error: ${e.name}`);
-      });
+    .getUserMedia(constraints)
+    .then(gotStream)
+    .then(gotDevices)
+    .catch(handleError);
 }
+
+function hangup() {
+  console.log('Ending call');
+  localStream.getTracks().forEach(track => track.stop());
+  pc1.close();
+  pc2.close();
+  pc1 = null;
+  pc2 = null;
+  hangupButton.disabled = true;
+  callButton.disabled = false;
+  codecSelector.disabled = false;
+}
+
+
+
 
 function gotDescription1(desc) {
   console.log(`Offer from pc1\n${desc.sdp}`);
@@ -190,17 +261,7 @@ function gotDescription2(desc) {
   }, onSetSessionDescriptionError);
 }
 
-function hangup() {
-  console.log('Ending call');
-  localStream.getTracks().forEach(track => track.stop());
-  pc1.close();
-  pc2.close();
-  pc1 = null;
-  pc2 = null;
-  hangupButton.disabled = true;
-  callButton.disabled = false;
-  codecSelector.disabled = false;
-}
+
 
 function gotRemoteStream(e) {
   if (audio2.srcObject !== e.streams[0]) {
@@ -322,78 +383,3 @@ function setDefaultCodec(mLine, payload) {
   return newLine.join(' ');
 }
 
-// // query getStats every second
-// window.setInterval(() => {
-//   if (!pc1) {
-//     return;
-//   }
-//   const sender = pc1.getSenders()[0];
-//   sender.getStats().then(res => {
-//     res.forEach(report => {
-//       let bytes;
-//       let headerBytes;
-//       let packets;
-//       if (report.type === 'outbound-rtp') {
-//         if (report.isRemote) {
-//           return;
-//         }
-//         const now = report.timestamp;
-//         bytes = report.bytesSent;
-//         headerBytes = report.headerBytesSent;
-
-//         packets = report.packetsSent;
-//         if (lastResult && lastResult.has(report.id)) {
-//           const deltaT = now - lastResult.get(report.id).timestamp;
-//           // calculate bitrate
-//           const bitrate = 8 * (bytes - lastResult.get(report.id).bytesSent) /
-//             deltaT;
-//           const headerrate = 8 * (headerBytes - lastResult.get(report.id).headerBytesSent) /
-//             deltaT;
-
-//           // append to chart
-//           bitrateSeries.addPoint(now, bitrate);
-//           headerrateSeries.addPoint(now, headerrate);
-//           bitrateGraph.setDataSeries([bitrateSeries, headerrateSeries]);
-//           bitrateGraph.updateEndDate();
-
-//           // calculate number of packets and append to chart
-//           packetSeries.addPoint(now, 1000 * (packets -
-//             lastResult.get(report.id).packetsSent) / deltaT);
-//           packetGraph.setDataSeries([packetSeries]);
-//           packetGraph.updateEndDate();
-//         }
-//       }
-//     });
-//     lastResult = res;
-//   });
-// }, 1000);
-
-// if (window.RTCRtpReceiver && ('getSynchronizationSources' in window.RTCRtpReceiver.prototype)) {
-//   let lastTime;
-//   const getAudioLevel = (timestamp) => {
-//     window.requestAnimationFrame(getAudioLevel);
-//     if (!pc2) {
-//       return;
-//     }
-//     const receiver = pc2.getReceivers().find(r => r.track.kind === 'audio');
-//     if (!receiver) {
-//       return;
-//     }
-//     const sources = receiver.getSynchronizationSources();
-//     sources.forEach(source => {
-//       audioLevels.push(source.audioLevel);
-//     });
-//     if (!lastTime) {
-//       lastTime = timestamp;
-//     } else if (timestamp - lastTime > 500 && audioLevels.length > 0) {
-//       // Update graph every 500ms.
-//       const maxAudioLevel = Math.max.apply(null, audioLevels);
-//       audioLevelSeries.addPoint(Date.now(), maxAudioLevel);
-//       audioLevelGraph.setDataSeries([audioLevelSeries]);
-//       audioLevelGraph.updateEndDate();
-//       audioLevels.length = 0;
-//       lastTime = timestamp;
-//     }
-//   };
-//   window.requestAnimationFrame(getAudioLevel);
-// }
