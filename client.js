@@ -533,13 +533,18 @@ if (LOCALSERVER==1) {
       httpApp = httpServer.createServer(serverHandler);
   }
 
+  
   RTCMultiConnectionServer.beforeHttpListen(httpApp, config);
-  httpApp = httpApp.listen(RTCPORT, RTCSERVER, function() {
+  httpApp = httpApp.listen(process.env.PORT || PORT, process.env.IP || "0.0.0.0", function() {
       RTCMultiConnectionServer.afterHttpListen(httpApp, config);
   });
 
 
-
   // server.listen(PORT, () => console.log(`Listening on ${ PORT }`));
+
+  ioS.sockets.on('connection', function(socket) {
+      RTCMultiConnectionServer.addSocket(socket, config);
+  });
+
 
 }
