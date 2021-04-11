@@ -20,17 +20,17 @@ const LOCALSERVER  = args[0] || 1;
 const UDPPORT      = 5009;
 const UDPLOCALPORT = 5010;
 const UDPHOST      = "localhost";
-
 // ---------------------------------------------
 const fs = require('fs');
 const url = require('url');
 const osc = require("osc");
 const repl = require('repl');
+const path = require('path');
 const express = require('express');
 const app = express();
-const path = require('path');
+const server = require("http").createServer(app);
+const ioServer = require('socket.io')(server);
 const io = require('socket.io-client');
-const ioServer = require('socket.io');
 const RTCMultiConnectionServer = require('rtcmulticonnection-server');
 var verbose = 0, udpportconnected = 0, users, thisid, running=true;
 console.log("LOCALSERVER: "+LOCALSERVER);
@@ -92,94 +92,31 @@ app.get('/', (req, res) => {
 });
 
 var PORT = 5011;
-var isUseHTTPs = true;
+var isUseHTTPs = false;
 
 const jsonPath = {
     config: 'config.json',
     logs: 'logs.json'
 };
 
-const BASH_COLORS_HELPER = RTCMultiConnectionServer.BASH_COLORS_HELPER;
 const getValuesFromConfigJson = RTCMultiConnectionServer.getValuesFromConfigJson;
-const getBashParameters = RTCMultiConnectionServer.getBashParameters;
 const resolveURL = RTCMultiConnectionServer.resolveURL;
-
 var config = getValuesFromConfigJson(jsonPath);
-config = getBashParameters(config, BASH_COLORS_HELPER);
 
-RTCPORT = config.port;
-
-if(PORT === 5011) {
-  PORT = config.port;
-}
-
-if(isUseHTTPs === false) {
-    isUseHTTPs = config.isUseHTTPs;
-}
-
-var httpApp;
-
-if (isUseHTTPs) {
-    httpServer = require('https');
-
-    // See how to use a valid certificate:
-    // https://github.com/muaz-khan/WebRTC-Experiment/issues/62
-    var options = {
-        key: null,
-        cert: null,
-        ca: null
-    };
-
-    var pfx = false;
-
-    if (!fs.existsSync(config.sslKey)) {
-        console.log(BASH_COLORS_HELPER.getRedFG(), 'sslKey:\t ' + config.sslKey + ' does not exist.');
-    } else {
-        pfx = config.sslKey.indexOf('.pfx') !== -1;
-        options.key = fs.readFileSync(config.sslKey);
-    }
-
-    if (!fs.existsSync(config.sslCert)) {
-        console.log(BASH_COLORS_HELPER.getRedFG(), 'sslCert:\t ' + config.sslCert + ' does not exist.');
-    } else {
-        options.cert = fs.readFileSync(config.sslCert);
-    }
-
-    if (config.sslCabundle) {
-        if (!fs.existsSync(config.sslCabundle)) {
-            console.log(BASH_COLORS_HELPER.getRedFG(), 'sslCabundle:\t ' + config.sslCabundle + ' does not exist.');
-        }
-
-        options.ca = fs.readFileSync(config.sslCabundle);
-    }
-
-    if (pfx === true) {
-        options = {
-            pfx: sslKey
-        };
-    }
-    httpApp = httpServer.createServer(options);
-} else {
-    httpApp = httpServer.createServer();
-}
-
-
-RTCMultiConnectionServer.beforeHttpListen(httpApp, config);
+RTCMultiConnectionServer.beforeHttpListen(server, config);
 
 var prt = process.env.PORT || PORT;
 var ipp = process.env.IP || "0.0.0.0";
 
-httpApp = httpApp.listen(prt, ipp, function() {
+var httpApp = server.listen(prt, ipp, function() {
     RTCMultiConnectionServer.afterHttpListen(httpApp, config);
 });
 
-ioServer(httpApp).on('connection', function(socket) {
+ioServer.sockets.on('connection', function(socket) {
     RTCMultiConnectionServer.addSocket(socket, config);
     console.log(socket.id + " connected.");
     socket.emit('address',ipp+":"+prt);
 });
-
-
 
 if (LOCALSERVER==1) {
 
