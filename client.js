@@ -29,8 +29,6 @@ const repl = require('repl');
 const express = require('express');
 const app = express();
 const path = require('path');
-const http = require('http');
-const server = http.Server(app);
 const io = require('socket.io-client');
 const ioServer = require('socket.io');
 const RTCMultiConnectionServer = require('rtcmulticonnection-server');
@@ -345,9 +343,9 @@ if (LOCALSERVER==1) {
               pfx: sslKey
           };
       }
-      httpApp = httpServer.createServer(options, serverHandler);
+      httpApp = httpServer.createServer(options);
   } else {
-      httpApp = httpServer.createServer(serverHandler);
+      httpApp = httpServer.createServer();
   }
 
   
