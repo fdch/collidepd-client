@@ -6,7 +6,10 @@
   <link rel="stylesheet" href="/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 </head>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/p5.min.js"></script>
 <body>
+
   <h1>Audio Streaming</h1>
   <section class="make-center">
     <input type="text" id="room-id" value="collidepd" autocorrect=off autocapitalize=off size=20>
@@ -17,10 +20,9 @@
     <div id="audios-container"></div>
   </section>
 
+<script src="/webclient.js"></script>
 <script src="/RTCMultiConnection.min.js"></script>
 <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
-<script src="/socket.io/socket.io.js"></script>
-<script src="/webclient.js"></script>
 <script src="https://www.webrtc-experiment.com/common.js"></script>
 
 </body>
