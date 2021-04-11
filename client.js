@@ -21,7 +21,7 @@ const UDPPORT      = 5009;
 const UDPLOCALPORT = 5010;
 const UDPHOST      = "localhost";
 const prt = process.env.PORT || PORT;
-const ipp = args[1] || process.env.IP || RTCSERVER;
+const ipp = "localhost";
 // ---------------------------------------------
 const fs = require('fs');
 const url = require('url');
