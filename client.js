@@ -106,7 +106,7 @@ var config = getValuesFromConfigJson(jsonPath);
 RTCMultiConnectionServer.beforeHttpListen(server, config);
 
 var prt = process.env.PORT || PORT;
-var ipp = process.env.IP || "0.0.0.0";
+var ipp = process.env.IP || RTCSERVER;
 
 var httpApp = server.listen(prt, ipp, function() {
     RTCMultiConnectionServer.afterHttpListen(httpApp, config);
@@ -115,7 +115,7 @@ var httpApp = server.listen(prt, ipp, function() {
 ioServer.sockets.on('connection', function(socket) {
     RTCMultiConnectionServer.addSocket(socket, config);
     console.log(socket.id + " connected.");
-    socket.emit('address',ipp+":"+prt);
+    socket.emit('address',ipp+":"+prt+"/");
 });
 
 if (LOCALSERVER==1) {
