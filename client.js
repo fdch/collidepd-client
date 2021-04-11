@@ -20,6 +20,8 @@ const LOCALSERVER  = args[0] || 1;
 const UDPPORT      = 5009;
 const UDPLOCALPORT = 5010;
 const UDPHOST      = "localhost";
+const prt = process.env.PORT || PORT;
+const ipp = args[1] || RTCSERVER;
 // ---------------------------------------------
 const fs = require('fs');
 const url = require('url');
@@ -33,7 +35,8 @@ const ioServer = require('socket.io')(server);
 const io = require('socket.io-client');
 const RTCMultiConnectionServer = require('rtcmulticonnection-server');
 var verbose = 0, udpportconnected = 0, users, thisid, running=true;
-console.log("LOCALSERVER: "+LOCALSERVER);
+
+
 function rstrip( str ) { 
   // Removes trailing new line characters from string
   return str.replace( /[\r\n]+/gm, "" ); 
@@ -104,9 +107,6 @@ const resolveURL = RTCMultiConnectionServer.resolveURL;
 var config = getValuesFromConfigJson(jsonPath);
 
 RTCMultiConnectionServer.beforeHttpListen(server, config);
-
-var prt = process.env.PORT || PORT;
-var ipp = process.env.IP || RTCSERVER;
 
 var httpApp = server.listen(prt, ipp, function() {
     RTCMultiConnectionServer.afterHttpListen(httpApp, config);
