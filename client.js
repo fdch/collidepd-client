@@ -33,7 +33,7 @@ const path = require('path');
 const http = require('http');
 const server = http.Server(app);
 const io = require('socket.io-client');
-const ioS = require('socket.io')(server);
+const ioServer = require('socket.io');
 const RTCMultiConnectionServer = require('rtcmulticonnection-server');
 var verbose = 0, udpportconnected = 0, users, thisid, running=true;
 console.log("LOCALSERVER: "+LOCALSERVER);
@@ -542,7 +542,7 @@ if (LOCALSERVER==1) {
 
   // server.listen(PORT, () => console.log(`Listening on ${ PORT }`));
 
-  ioS.sockets.on('connection', function(socket) {
+  ioServer(httpApp).on('connection', function(socket) {
       RTCMultiConnectionServer.addSocket(socket, config);
   });
 
