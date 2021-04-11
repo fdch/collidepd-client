@@ -1,52 +1,23 @@
-const userAgent = window.navigator.userAgent;
-const MAXCHATS = 10;
-var deviceIsAndroid;
-var canvas, socket, status;
-var i, a;
-var sx,sy,angle,radius,click;
-var playersTitle = document.getElementById('players');
-var statusTitle = document.getElementById('status');
-var messages = document.getElementById('messages');
-var chatbox = document.getElementById('chatbox');
-var chat = document.getElementById('chat');
-
-function addChat(e) {
-  if (messages.firstChild) 
-        messages.removeChild(messages.firstChild);
-  let li = document.createElement('li');
-  let liapp = messages.appendChild(li);
-  liapp.innerHTML = e;
-}
+var canvas, socket;
 
 var connection = new RTCMultiConnection();
 
 function setup() {
+
   console.log("Making canvas.");
 
   canvas = createCanvas(windowWidth, windowHeight);
-  frameRate(30);
+
+  // frameRate(30);
 
   socket = io({
     transports: ['websocket'],
     autoConnect: true
   });
+
+
   if (socket.connected) {
     console.log("Connected to socket.");
-  }
-  
-  chatbox.addEventListener("submit", function(evt) {
-    evt.preventDefault();
-    
-      console.log('chat', chat.value);
-      addChat(chat.value);
-      chat.value = '';
-
-  });
-
-  for (i=0;i<MAXCHATS;i++) {
-    let li = document.createElement('li');
-    let liapp = messages.appendChild(li);
-    liapp.innerHTML = '.';
   }
 
   socket.on('address', data => {
