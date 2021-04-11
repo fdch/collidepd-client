@@ -532,7 +532,7 @@ if (LOCALSERVER==1) {
   }
 
   RTCMultiConnectionServer.beforeHttpListen(httpApp, config);
-  httpApp = httpApp.listen(process.env.PORT || RTCPORT, process.env.IP || "0.0.0.0", function() {
+  httpApp = httpApp.listen(RTCPORT, "localhost", function() {
       RTCMultiConnectionServer.afterHttpListen(httpApp, config);
   });
 
