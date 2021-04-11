@@ -7,7 +7,7 @@
   "port": "5011",
   "enableLogs": "false",
   "autoRebootServerOnFailure": "false",
-  "isUseHTTPs": "false",
+  "isUseHTTPs": "true",
   "sslKey": "./fake-keys/private.pem",
   "sslCert": "./fake-keys/cert.pem",
   "sslCabundle": "",

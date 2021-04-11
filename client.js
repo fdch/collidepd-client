@@ -15,11 +15,13 @@ const hmsg="\n\
 // ---------------------------------------------
 const args = process.argv.slice(2);
 const SERVER       = "https://collidepd.herokuapp.com";
+const RTCSERVER    = "https://collidepd-client.herokuapp.com";
 const LOCALSERVER  = args[0] || 1;
 const UDPPORT      = 5009;
 const UDPLOCALPORT = 5010;
 const UDPHOST      = "localhost";
 const PORT         = process.env.PORT || 5011;
+
 // ---------------------------------------------
 const fs = require('fs');
 const url = require('url');
@@ -532,7 +534,7 @@ if (LOCALSERVER==1) {
   }
 
   RTCMultiConnectionServer.beforeHttpListen(httpApp, config);
-  httpApp = httpApp.listen(RTCPORT, "localhost", function() {
+  httpApp = httpApp.listen(RTCPORT, RTCSERVER, function() {
       RTCMultiConnectionServer.afterHttpListen(httpApp, config);
   });
 
