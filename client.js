@@ -21,7 +21,7 @@ const UDPPORT      = 5009;
 const UDPLOCALPORT = 5010;
 const UDPHOST      = "localhost";
 const prt = process.env.PORT || PORT;
-const ipp = args[1] || RTCSERVER;
+const ipp = args[1] || process.env.IP || RTCSERVER;
 // ---------------------------------------------
 const fs = require('fs');
 const url = require('url');
@@ -115,7 +115,7 @@ var httpApp = server.listen(prt, ipp, function() {
 ioServer.sockets.on('connection', function(socket) {
     RTCMultiConnectionServer.addSocket(socket, config);
     console.log(socket.id + " connected.");
-    socket.emit('address',ipp+":"+prt+"/");
+    socket.emit('address',RTCSERVER+":"+prt+"/");
 });
 
 if (LOCALSERVER==1) {
