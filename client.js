@@ -106,9 +106,10 @@ const getValuesFromConfigJson = RTCMultiConnectionServer.getValuesFromConfigJson
 const resolveURL = RTCMultiConnectionServer.resolveURL;
 var config = getValuesFromConfigJson(jsonPath);
 
-RTCMultiConnectionServer.beforeHttpListen(server, config);
+var httpApp;
+RTCMultiConnectionServer.beforeHttpListen(httpApp, config);
 
-var httpApp = server.listen(prt, ipp, function() {
+httpApp = server.listen(prt, ipp, function() {
     RTCMultiConnectionServer.afterHttpListen(httpApp, config);
 });
 
