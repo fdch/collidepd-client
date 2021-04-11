@@ -20,7 +20,6 @@ const LOCALSERVER  = args[0] || 1;
 const UDPPORT      = 5009;
 const UDPLOCALPORT = 5010;
 const UDPHOST      = "localhost";
-const PORT         = process.env.PORT || 5011;
 
 // ---------------------------------------------
 const fs = require('fs');
