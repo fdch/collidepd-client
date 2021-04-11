@@ -351,12 +351,17 @@ if (LOCALSERVER==1) {
   
   RTCMultiConnectionServer.beforeHttpListen(httpApp, config);
 
-  httpApp = httpApp.listen(process.env.PORT || PORT, process.env.IP || "0.0.0.0", function() {
+  var prt = process.env.PORT || PORT;
+  var ipp = process.env.IP || "0.0.0.0";
+
+  httpApp = httpApp.listen(prt, ipp, function() {
       RTCMultiConnectionServer.afterHttpListen(httpApp, config);
   });
 
   ioServer(httpApp).on('connection', function(socket) {
       RTCMultiConnectionServer.addSocket(socket, config);
+      console.log(socket.id + " connected.");
+      socket.emit('address',ipp+":"+prt);
   });
 
 
