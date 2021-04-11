@@ -21,6 +21,7 @@ function addChat(e) {
 var connection = new RTCMultiConnection();
 
 function setup() {
+  console.log("Making canvas.");
 
   canvas = createCanvas(windowWidth, windowHeight);
   frameRate(30);
@@ -29,6 +30,9 @@ function setup() {
     transports: ['websocket'],
     autoConnect: true
   });
+  if (socket.connected) {
+    console.log("Connected to socket.");
+  }
   
   chatbox.addEventListener("submit", function(evt) {
     evt.preventDefault();
