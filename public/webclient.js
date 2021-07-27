@@ -1,40 +1,88 @@
-var canvas, socket;
+// -----------------------------------------------------------------------------
+//
+// EVENT HANDLING
+//
+// -----------------------------------------------------------------------------
 
-function setup() {
+//
+// 1. "connected" message
+//
 
-  console.log("Making canvas.");
+socket.on('connected', function (data) {
+  // populate global variables 's' and 'num_players'
+  // this user's oscid (from the server)
+  s = data[0];
+  // the current number of players upon initial connection
+  num_players = data[1];
+  // display these values on the html interface
+  // playerTitle.innerHTML = s.toString();
+  playersSpan.innerHTML = num_players.toString();
+  // display a 'connected' message on the interface
+  // statusTitle.innerHTML = 'ON';
+  // startButton.style.backgroundColor = colorFront;
+  console.log("Player #" + s + " of " + num_players + " connected.");
 
-  canvas = createCanvas(windowWidth, windowHeight);
+});
 
-  // frameRate(30);
+// -----------------------------------------------------------------------------
+//
+// UPDATE PLAYERS
+//
+// -----------------------------------------------------------------------------
 
-  socket = io({
-    transports: ['websocket'],
-    autoConnect: true
+function updatePlayers(data) {
+
+  players = data.filter(function (x) {
+      return x !== 0;
   });
 
 
-  if (socket.connected) {
-    console.log("Connected to socket.");
+  for (let i = 0; i < players.length; i++) {
+
+      let idx = players[i].oscid;
+
+      // console.log(idx);
+
+      if (sintes[idx] === 0) {
+          sintes[idx] = new Visualizer(data[i]);
+      } else {
+          console.log("Player " + idx + " is already ON.");
+      }
   }
 
-  socket.on('connected', (data) => {sendUDPMessage(udpPort,'connected', data)});
-  socket.on('disconnected', () => {sendUDPMessage(udpPort, 'disconnected', 0)});
-  socket.on('chat', (data) => {sendUDPMessage(udpPort, 'chat', data)});
-  socket.on('onoff', (data) => {sendUDPMessage(udpPort, 'onoff', data)});
-  socket.on('loopstart', (data) => {sendUDPMessage(udpPort,'loopstart',data)});
-  socket.on('set', (data) => {sendUDPMessage(udpPort,'set',data)});
-  socket.on('tilt', (data) => {sendUDPMessage(udpPort,'tilt',data)});
-  socket.on('bpm', (data) => {sendUDPMessage(udpPort,'bpm',data)});
-  socket.on('delay', (data) => {sendUDPMessage(udpPort,'delay',data)});
-  socket.on('verb', (data) => {sendUDPMessage(udpPort,'verb',data)});
-  socket.on('selectF', (data) => {sendUDPMessage(udpPort,'selectF',data)});
-  socket.on('selectS', (data) => {sendUDPMessage(udpPort,'selectS',data)});
-  socket.on('position', (data) => {sendUDPMessage(udpPort,'position',data)});
+
+  num_players = players.length;
+
+  playersSpan.innerHTML = num_players.toString();
 
 }
 
-function draw() {
+//
+// 2. "userdata" message
+//
 
-  // fetchMostRecentData();
-}
+socket.on('userdata', function (data) {
+  // console.log(data);
+  updatePlayers(data);
+  userData = data;
+});
+
+socket.on('removeuser', function (idx) {
+  console.log("Disconnecting: " + idx);
+  if (sintes[idx] != 0 && typeof sintes[idx].destroyer() !== 'undefined5') {
+      // sintes[idx].destroyer();
+      sintes[idx] = 0;
+  } else {
+      console.log("Player " + idx + " is already OFF.");
+  }
+});
+
+//Socket.on recibe los mensajes desde el servidor
+socket.on('chat', (data) => {
+  addChat(data);
+});
+socket.on('chathist', (data) => {
+  for (let d of data) {
+      addChat(d);
+  }
+});
