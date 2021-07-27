@@ -1,4 +1,4 @@
-const hmsg="\n\
+const hmsg = "\n\
 ------------------------------------------------\n\
 | COLLIDEPD commandline client client utility  |\n\
 ------------------------------------------------\n\n\
@@ -14,44 +14,25 @@ const hmsg="\n\
 > /osc/address values... : sends osc messages to the udp server\n\n"
 // ---------------------------------------------
 const args = process.argv.slice(2);
-const SERVER       = "https://collidepd.herokuapp.com";
-const RTCSERVER    = "https://collidepd-client.herokuapp.com";
-const LOCALSERVER  = args[0] || 1;
-const UDPPORT      = 5009;
+const SERVER = "https://collidepd.herokuapp.com";
+const LOCALSERVER = args[0] || 1;
+const UDPPORT = 5009;
 const UDPLOCALPORT = 5010;
-const UDPHOST      = "localhost";
-const prt = process.env.PORT || PORT;
-const ipp = "localhost";
-// ---------------------------------------------
-const fs = require('fs');
-const url = require('url');
+const UDPHOST = "localhost";
+// serve the homepage
 const osc = require("osc");
 const repl = require('repl');
 const path = require('path');
 const express = require('express');
 const app = express();
-const server = require("http").createServer(app);
-const ioServer = require('socket.io')(server);
 const io = require('socket.io-client');
-const RTCMultiConnectionServer = require('rtcmulticonnection-server');
-var verbose = 0, udpportconnected = 0, users, thisid, running=true;
+let verbose = 0,
+  udpportconnected = 0,
+  users, thisid, running = true;
 
-
-function rstrip( str ) { 
+function rstrip(str) {
   // Removes trailing new line characters from string
-  return str.replace( /[\r\n]+/gm, "" ); 
-}
-
-function sendUDPMessage(port, data) {
-  // Sends a UDP message
-  // input: array shaped with '/osc/address f1 [, f2, f3, ...]'
-  let address = data.shift();
-  let args = Array.prototype.map.call(data, function(x) {
-    return {type:'f', value:x};
-  });
-
-  port.send({ address: address, args: args });
-
+  return str.replace(/[\r\n]+/gm, "");
 }
 
 function sendSocketMessage(socket, data) {
@@ -59,32 +40,69 @@ function sendSocketMessage(socket, data) {
   // input: array shaped with 'address, [header, values...]'
   let address = data.shift();
 
-  switch(data.length) {
+  switch (data.length) {
     case 0:
       socket.emit(address);
-    break;
+      break;
     case 1:
       socket.emit(address, data.toString());
-    break;
+      break;
     default:
       socket.emit(address, {
-        header : data.shift(),
-        values : data
+        header: data.shift(),
+        values: data
       });
-    break;
+      break;
   }
 }
 
-function onoff(oscid, value) {
-  if(udpportconnected) {
-    udpPort.send({
-      address: "/cpd/"+oscid+"/onoff", 
-      args: {type:'i', value:value}
-    });
+function sendUDPMessage(udpPort, address, data) {
+  console.log('data %j',data);
+  let args = [];
+  for (let e in data[1]) {
+    args.push({type:'f',value:e[1]});
   }
+  // Object.entries(data[1]).map( (k,v) => {
+  //   console.log('entries %j AND %j',k,v);
+  // })
+  console.log(args);
+  // var oscformat = {
+  //   address: "/cpd" + address + data[0].toString(),
+  //   args: 
+  // }
+  // consoles.log('oscformat %j',oscformat);
+  // udpPort.send(oscformat);
+
+  // if (udpportconnected) {
+  //   // Sends a UDP message
+  //   // input: array shaped with '/osc/address f1 [, f2, f3, ...]'
+  //   let address = data.shift();
+  //   let args = Array.prototype.map.call(data, function (x) {
+  //     return {
+  //       type: 'f',
+  //       value: x
+  //     };
+  //   });
+
+  //   udpPort.send({
+  //     address: address,
+  //     args: args
+  //   });
+  // }
 }
+
+// function onoff(oscid, value) {
+//   if (udpportconnected) {
+//     udpPort.send({
+//       address: "/cpd/" + oscid + "/onoff",
+//       args: {
+//         type: 'i',
+//         value: value
+//       }
+//     });
+//   }
+// }
 // ---------------------------------------------
-
 // homepage
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -94,32 +112,7 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-var PORT = 5011;
-var isUseHTTPs = false;
-
-const jsonPath = {
-    config: 'config.json',
-    logs: 'logs.json'
-};
-
-const getValuesFromConfigJson = RTCMultiConnectionServer.getValuesFromConfigJson;
-const resolveURL = RTCMultiConnectionServer.resolveURL;
-var config = getValuesFromConfigJson(jsonPath);
-
-var httpApp;
-RTCMultiConnectionServer.beforeHttpListen(httpApp, config);
-
-httpApp = server.listen(prt, ipp, function() {
-    RTCMultiConnectionServer.afterHttpListen(httpApp, config);
-});
-
-ioServer.sockets.on('connection', function(socket) {
-    RTCMultiConnectionServer.addSocket(socket, config);
-    console.log(socket.id + " connected.");
-    socket.emit('address',RTCSERVER+":"+prt+"/");
-});
-
-if (LOCALSERVER==1) {
+if (LOCALSERVER == 1) {
 
   console.log("Connecting to heroku server...");
 
@@ -127,9 +120,10 @@ if (LOCALSERVER==1) {
     transports: ['websocket'],
     autoConnect: true
   });
+
   const udpPort = new osc.UDPPort({
     remoteAddress: UDPHOST,
-    remotePort: UDPPORT,  
+    remotePort: UDPPORT,
     localAddress: UDPHOST,
     localPort: UDPLOCALPORT,
     metadata: true
@@ -148,156 +142,93 @@ if (LOCALSERVER==1) {
     console.log("socket.id: " + thisid);
     console.log(hmsg)
   });
-
-  socket.on('users', (data) => {
-    console.log("%d connected users.", data);
-  })
-
-  socket.on('usernames', (data) => {
-    console.log("%j", data);  
-  })
-
-  // socket.on('connected', (data) => {
-  //   onoff(data.toString(), 1); // turn user on
-  // })
-
-  // socket.on('disconnected', (data) => {
-  //   onoff(data.toString(), 0); // turn user off
-  // })
-
-  socket.on('onoff', (data, value) => {
-    // console.log(data);
-    // console.log(value);
-    onoff(data.toString(), value); // turn user off
-  })
-
+  
   socket.on('userdata', (data) => {
     // this is received whenever there is a new (dis)connection
-    running = false;
-    users = data;
-    running = true;
-    for(let i in users) {
-      if (verbose){
-        let o = JSON.stringify(users[i], null, 4);
-        console.log(o);  
+    users = data.filter( (x) => { return x !== 0 });
+    console.log('userdata %j', users);
+  });
+  
+  socket.on('chathist', (data) => {
+    data.map( (obj) => {
+      if(obj.value!=='') {
+        console.log("chat: %j", obj)
       }
-      console.log(users[i]['id'], users[i]['oscid']);
-    }
+    });
   });
-
-
-  socket.on('event', (data) => {
-    let dropped;
-    if (udpportconnected) {
-      
-      if (running) {
-        
-        dropped=0;    
-      
-        let args = Array.prototype.map.call([...data.value], function(x) {
-          return {type:'f', value:x};
-        });
-        
-        let address = "/cpd/" + data.id.toString() + data.head.toString();
-      
-        var oscformat = {
-          address: address, 
-          args: args
-        }
-      
-        udpPort.send(oscformat);
-      
-      } else {
-      
-        dropped++;
-      
-      }
-    }
-
-    if (verbose) {
-      console.log("data: %j", data);
-      if(udpportconnected) {
-        console.log("OSC: %j", oscformat);
-        if(dropped) {
-          console.log("Dropped %d", dropped);
-        }
-      }
-    }
-  });
-
-  socket.on("connect_error", (error) => {
-    console.error(error.message);
-  });
-
-  socket.on("disconnect", (reason) => {
-    console.log(reason);
-  });
-
-  socket.on('chat', (data) => {
-    console.log('chat: %j', data);
-  });
-  socket.on('connected', function(s) {
-      console.log(s.toString());
-  });
-  socket.on('disconnected', function() {
-      console.log('disconnected');
-  });
-
+  
+  socket.on("connect_error", (error) => {console.error(error.message)});
+  socket.on("disconnect", (reason) => { console.log(reason)});
+  
+  socket.on('connected', (data) => {sendUDPMessage(udpPort,'connected', data)});
+  socket.on('disconnected', () => {sendUDPMessage(udpPort, 'disconnected', 0)});
+  socket.on('chat', (data) => {sendUDPMessage(udpPort, 'chat', data)});
+  socket.on('onoff', (data) => {sendUDPMessage(udpPort, 'onoff', data)});
+  socket.on('loopstart', (data) => {sendUDPMessage(udpPort,'loopstart',data)});
+  socket.on('set', (data) => {sendUDPMessage(udpPort,'set',data)});
+  socket.on('tilt', (data) => {sendUDPMessage(udpPort,'tilt',data)});
+  socket.on('bpm', (data) => {sendUDPMessage(udpPort,'bpm',data)});
+  socket.on('delay', (data) => {sendUDPMessage(udpPort,'delay',data)});
+  socket.on('verb', (data) => {sendUDPMessage(udpPort,'verb',data)});
+  socket.on('selectF', (data) => {sendUDPMessage(udpPort,'selectF',data)});
+  socket.on('selectS', (data) => {sendUDPMessage(udpPort,'selectS',data)});
+  socket.on('position', (data) => {sendUDPMessage(udpPort,'position',data)});
+  
   // Prompt for user CLI input
 
   repl.start({
-    
+
     prompt: '> ',
-    
-      eval: (cmd) => {
-        // parse the string into a data array
-        const data = rstrip(cmd).split(' ');
-        // interpret the first element as header
-        f = data[0].toString();
-        // parse the header and forward messages
-        if (!f.localeCompare("connect")) {
-          // connect to the socket
-          socket.open();
-        } else if (!f.localeCompare("disconnect")) {
-          // disconnect from the socket
-          socket.close();
-        } else if (!f.localeCompare("udpconnect")) {
-          // connect to the udp port
-          if(!udpportconnected)  {
-            udpPort.open();
-            udpportconnected = 1;
-          }
-        } else if (!f.localeCompare("udpdisconnect")) {
-          // disconnect from the udp port
-          if(udpportconnected) {
-            udpPort.close();
-            udpportconnected = 0;
-          }
-        } else if (!f.localeCompare("verbose")) {
-          // change verbosity
-          verbose = verbose ? 0 : 1;
-        } else if (!f.localeCompare("print")) {
-          // change verbosity
-          console.log("%j", users);
-        } else if (!f.localeCompare("exit")) {
-          console.log("Bye!\n");
-          if (udpportconnected) udpPort.close();
-          if (socket.connected) socket.close();
-          process.exit();
-        } else if (!f.localeCompare("server")) {
-          // forward the server message to the socket
-          s = data.shift();
-          sendSocketMessage(socket, data);
-        } else if (!f.localeCompare("help")) {
-          // get some help
-          console.log(hmsg);
-        } else if (!f.localeCompare("")) {
-          // do nothing
-        } else {
-          // forward the osc formatted message
-          sendUDPMessage(udpPort, data);
+
+    eval: (cmd) => {
+      // parse the string into a data array
+      const data = rstrip(cmd).split(' ');
+      // interpret the first element as header
+      f = data[0].toString();
+      // parse the header and forward messages
+      if (!f.localeCompare("connect")) {
+        // connect to the socket
+        socket.open();
+      } else if (!f.localeCompare("disconnect")) {
+        // disconnect from the socket
+        socket.close();
+      } else if (!f.localeCompare("udpconnect")) {
+        // connect to the udp port
+        if (!udpportconnected) {
+          udpPort.open();
+          udpportconnected = 1;
         }
+      } else if (!f.localeCompare("udpdisconnect")) {
+        // disconnect from the udp port
+        if (udpportconnected) {
+          udpPort.close();
+          udpportconnected = 0;
+        }
+      } else if (!f.localeCompare("verbose")) {
+        // change verbosity
+        verbose = verbose ? 0 : 1;
+      } else if (!f.localeCompare("print")) {
+        // change verbosity
+        console.log("%j", users);
+      } else if (!f.localeCompare("exit")) {
+        console.log("Bye!\n");
+        if (udpportconnected) udpPort.close();
+        if (socket.connected) socket.close();
+        process.exit();
+      } else if (!f.localeCompare("server")) {
+        // forward the server message to the socket
+        s = data.shift();
+        sendSocketMessage(socket, data);
+      } else if (!f.localeCompare("help")) {
+        // get some help
+        console.log(hmsg);
+      } else if (!f.localeCompare("")) {
+        // do nothing
+      } else {
+        // forward the osc formatted message
+        sendUDPMessage(udpPort, data);
       }
+    }
 
   });
 }
