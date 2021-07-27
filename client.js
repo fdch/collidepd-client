@@ -112,7 +112,7 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-if (LOCALSERVER == 1) {
+if (LOCALSERVER === 1) {
 
   console.log("Connecting to heroku server...");
 
@@ -159,7 +159,7 @@ if (LOCALSERVER == 1) {
   
   socket.on("connect_error", (error) => {console.error(error.message)});
   socket.on("disconnect", (reason) => { console.log(reason)});
-  
+
   socket.on('connected', (data) => {sendUDPMessage(udpPort,'connected', data)});
   socket.on('disconnected', () => {sendUDPMessage(udpPort, 'disconnected', 0)});
   socket.on('chat', (data) => {sendUDPMessage(udpPort, 'chat', data)});
