@@ -37,9 +37,12 @@ function addChat(data) {
   if( data.value !== "" && data.head >= 0 ) {
     let messages = document.getElementById('messages');
     let topPos = chatDiv.offsetTop;
-    let li = document.createElement('li');
+    let li = document.createElement('span');
     li.innerHTML = data.head + ": " + data.value;
-    messages.appendChild(li);
+    let d = document.createElement('div');
+    d.className = "chat-bubble";
+    d.appendChild(li);
+    messages.appendChild(d);
     chatDiv.scrollTop = topPos+10;
   }
 }

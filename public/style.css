@@ -9,14 +9,9 @@ body {
   /* overflow: hidden; */
 }
 
-/* Scale canvas with resize attribute to full size */
-canvas[resize] {
-  width: 100%;
-  height: 100%;
-}
 header {
   display:flex;
-  flex-direction:column;
+  flex-direction:row;
   padding:0 2vmin;
   /* padding: 10vmin; */
 }
@@ -25,22 +20,53 @@ header {
   margin:0;
 }
 #chat {
-  display:inline;
-  position:fixed;
-  right:0;
+  display:flex;
+  align-items:right;
+  flex-direction:column;
+  flex-wrap:wrap;
+  /* position:fixed; */
+  /* left:0; */
   /* margin:10vmin; */
   /* flex-direction:row; */
   /* border:1vmin solid black; */
   border-radius:3vmin;
   /* margin:0 auto; */
-  max-width:100vmin;
+  /* max-width:100vmin; */
   max-height:100vmin;
-  overflow:scroll;
+  /* overflow:scroll; */
   padding:2vmin;
   z-index:100;
 }
 #messages {
-  list-style: none;
   padding: 0;
   margin: 0;
+  /* width:50vmin; */
+  display:flex;
+  flex-direction:row;
+  flex-wrap:wrap;
+  align-items:stretch;
+}
+
+.chat-bubble{
+  word-wrap:break-word;
+  word-break: break-all;
+
+  border-radius:2vmin;
+  overflow:hidden;
+  max-width:60vmin;
+  max-height:10vmin;
+  padding:1vmin;
+
+
+}
+/* Scale canvas with resize attribute to full size */
+canvas[resize] {
+  position:fixed;
+  top:10vmin;
+  width: 100%;
+  height: 100%;
+}
+
+.qrcode {
+  max-height:15vmin;
 }

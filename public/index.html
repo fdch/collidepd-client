@@ -31,13 +31,16 @@
 </head>
 <body>
   <header id="menuheader">
-    <h1 class="headtitle">CollidePd - Visuals</h1>
-    <span class="headtitle">There are <span id="playersSpan">0</span> connected players.</span>
-    <div id='chat'>
-      <ul id="messages"><li></li></ul>
+    <div>
+      <h1 class="headtitle">CollidePd - Visuals</h1>
+      <span class="headtitle">There are <span id="playersSpan">0</span> connected players.</span>
     </div>
+    <a href="https://collidepd.herokuapp.com" target="_blank"><img class="qrcode" src="collidepd_qr.png" alt="Go to https://collidepd.herokuapp.com"/></a>
   </header>
   <main>
+    <div id='chat'>
+      <div id="messages"></div>
+    </div>
     <canvas id="cnv" resize></canvas>
   </main>
   <footer></footer>
