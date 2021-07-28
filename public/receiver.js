@@ -52,8 +52,8 @@ socket.on('tilt', (data) => {
 
 socket.on('position', (data) => {
     let i = data[0]; // indice del usuario
-    let x = data[1].x;
-    let y = data[1].y;
+    let x = data[1][1].x;
+    let y = data[1][1].y;
     sintes[i].draw(x,y);
 });
 
